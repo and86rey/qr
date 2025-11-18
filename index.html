@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>QR for CV – Exact Style</title>
-  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <style>
     body {font-family: Calibri,Arial,sans-serif; text-align:center; padding:60px 20px; background:#f8f8f8; line-height:1.6;}
     h1 {font-size:28pt; margin:0 0 10px;}
@@ -28,26 +28,36 @@
       if (!url) return alert("Please paste a link first");
       if (!/^https?:\/\//i.test(url)) url = "https://" + url;
 
-      // Create hidden canvas
-      const canvas = document.createElement("canvas");
-      canvas.width = canvas.height = 80;
+      // Create hidden container for QR
+      const container = document.createElement("div");
+      container.style.display = "none";
+      document.body.appendChild(container);
 
-      QRCode.toCanvas(canvas, url, {
+      // Generate QR exactly like in your CV
+      new QRCode(container, {
+        text: url,
         width: 80,
-        margin: 0,
-        color: { dark: "#000000", light: "#FFFFFF" },
-        errorCorrectionLevel: "H"
-      }, function (error) {
-        if (error) console.error(error);
-
-        // Trigger instant download
-        canvas.toBlob(blob => {
-          const a = document.createElement("a");
-          a.download = "qr-cv.png";
-          a.href = URL.createObjectURL(blob);
-          a.click();
-        }, "image/png");
+        height: 80,
+        colorDark: "#000000",
+        colorLight: "#FFFFFF",
+        correctLevel: QRCode.CorrectLevel.H
       });
+
+      // Wait for render, then download PNG
+      setTimeout(() => {
+        const canvas = container.querySelector("canvas");
+        if (canvas) {
+          canvas.toBlob(blob => {
+            const a = document.createElement("a");
+            a.download = "qr-cv.png";
+            a.href = URL.createObjectURL(blob);
+            a.click();
+          }, "image/png");
+        } else {
+          alert("QR generation failed — try refreshing the page");
+        }
+        document.body.removeChild(container);
+      }, 100);
     }
 
     // Press Enter = generate
