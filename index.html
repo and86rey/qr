@@ -1,146 +1,59 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>QR Code Generator – CV Style</title>
-  <script src="https://cdn.jsdelivr.net/npm/qrcode.js@1.4.4/lib/qrcode.min.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QR for CV – Exact Style</title>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js"></script>
   <style>
-    body {
-      font-family: Calibri, Arial, sans-serif;
-      background: #f8f8f8;
-      max-width: 800px;
-      margin: 60px auto;
-      padding: 40px;
-      text-align: center;
-      line-height: 1.6;
-      font-size: 12pt;
-      color: #000;
-    }
-    h1 { font-size: 28pt; margin-bottom: 10px; font-weight: bold; }
-    p { margin: 10px 0 30px; color: #333; }
-    input {
-      width: 100%;
-      padding: 16px;
-      font-size: 16pt;
-      margin: 20px 0;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      box-sizing: border-box;
-    }
-    button {
-      padding: 16px 50px;
-      font-size: 16pt;
-      background: #000;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      margin: 10px;
-    }
-    button:hover { background: #333; }
-    button.secondary { background: #666; }
-    button.secondary:hover { background: #555; }
-    #output {
-      margin: 50px auto;
-      padding: 20px;
-      background: white;
-      display: inline-block;
-      border: 1px solid #ddd;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-    }
-    #qrcode {
-      width: 100px;
-      height: 100px;
-    }
-    #downloadLink {
-      display: none;
-      margin-top: 20px;
-    }
-    .note {
-      margin-top: 50px;
-      color: #555;
-      font-size: 10pt;
-    }
+    body {font-family: Calibri,Arial,sans-serif; text-align:center; padding:60px 20px; background:#f8f8f8; line-height:1.6;}
+    h1 {font-size:28pt; margin:0 0 10px;}
+    input {width:90%; max-width:600px; padding:16px; font-size:18px; margin:25px auto; display:block; border:1px solid #ccc; border-radius:6px;}
+    button {padding:16px 50px; font-size:18px; background:#000; color:#fff; border:none; border-radius:6px; cursor:pointer;}
+    button:hover {background:#333;}
   </style>
 </head>
 <body>
 
-  <h1>QR Code Generator</h1>
-  <p>Paste any link → get the exact QR code style from Andrey Zakharov’s CV</p>
+  <h1>QR Code for CV</h1>
+  <p>Paste any link → instantly download the exact 80×80 px QR from Andrey Zakharov’s CV</p>
 
-  <input type="text" id="url" placeholder="Paste your link here (e.g. LinkedIn, GitHub, portfolio)" autofocus />
+  <input type="text" id="url" placeholder="https://www.linkedin.com/in/..." autofocus>
 
-  <button onclick="generate()">Generate QR Code</button>
-
-  <div id="output">
-    <div id="qrcode"></div>
-    <div id="downloadLink">
-      <a id="downloadBtn" download="qr-code.png" href="#" style="text-decoration: none;">
-        <button class="secondary">Download QR as PNG (for pasting into docs)</button>
-      </a>
-    </div>
-  </div>
-
-  <div class="note">
-    Works offline • No data sent • Open source • Forever free<br>
-    Live at: <strong>https://and86rey.github.io/qr/</strong>
-  </div>
+  <button onclick="generate()">Generate & Download QR</button>
 
   <script>
-    let qrInstance; // Store QR instance for download
-
     function generate() {
       let url = document.getElementById("url").value.trim();
-      if (!url) {
-        alert("Please paste a link first");
-        return;
-      }
+      if (!url) return alert("Please paste a link first");
+      if (!/^https?:\/\//i.test(url)) url = "https://" + url;
 
-      // Add https:// if missing
-      if (!/^https?:\/\//i.test(url)) {
-        url = "https://" + url;
-      }
+      // Create hidden canvas
+      const canvas = document.createElement("canvas");
+      canvas.width = canvas.height = 80;
 
-      // Clear previous QR
-      document.getElementById("qrcode").innerHTML = "";
-      document.getElementById("downloadLink").style.display = "none";
+      QRCode.toCanvas(canvas, url, {
+        width: 80,
+        margin: 0,
+        color: { dark: "#000000", light: "#FFFFFF" },
+        errorCorrectionLevel: "H"
+      }, function (error) {
+        if (error) console.error(error);
 
-      // Generate exact CV-style QR code
-      qrInstance = new QRCode(document.getElementById("qrcode"), {
-        text: url,
-        width: 100,
-        height: 100,
-        colorDark: "#000000",
-        colorLight: "#ffffff",
-        correctLevel: QRCode.CorrectLevel.H
+        // Trigger instant download
+        canvas.toBlob(blob => {
+          const a = document.createElement("a");
+          a.download = "qr-cv.png";
+          a.href = URL.createObjectURL(blob);
+          a.click();
+        }, "image/png");
       });
-
-      // Show download button after generation
-      document.getElementById("downloadLink").style.display = "block";
-      setupDownload();
     }
 
-    function setupDownload() {
-      // Wait a tick for QR to render, then create downloadable PNG
-      setTimeout(() => {
-        const canvas = document.querySelector("#qrcode canvas");
-        if (canvas) {
-          const link = document.getElementById("downloadBtn");
-          link.href = canvas.toDataURL("image/png");
-        }
-      }, 100);
-    }
-
-    // Allow pressing Enter
-    document.getElementById("url").addEventListener("keypress", function(e) {
+    // Press Enter = generate
+    document.getElementById("url").addEventListener("keypress", e => {
       if (e.key === "Enter") generate();
     });
-
-    // Focus input on load
-    window.onload = function() {
-      document.getElementById("url").focus();
-    };
   </script>
 
 </body>
