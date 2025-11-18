@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>QR Code Generator – CV Style</title>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode.js@1.4.4/lib/qrcode.min.js"></script>
+  <style>
+    body {
+      font-family: Calibri, Arial, sans-serif;
+      background: #f8f8f8;
+      max-width: 800px;
+      margin: 60px auto;
+      padding: 40px;
+      text-align: center;
+      line-height: 1.6;
+      font-size: 12pt;
+    }
+    h1 { font-size: 28pt; margin-bottom: 10px; }
+    input {
+      width: 100%;
+      padding: 14px;
+      font-size: 16pt;
+      margin: 20px 0;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+    button {
+      padding: 14px 40px;
+      font-size: 16pt;
+      background: #000;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    button:hover { background: #333; }
+    #qrcode {
+      margin: 40px auto;
+      padding: 20px;
+      background: white;
+      display: inline-block;
+      border: 1px solid #ddd;
+    }
+    #qrcode img { display: block; margin: 0 auto; }
+    .note { margin-top: 40px; color: #555; font-size: 10pt; }
+  </style>
+</head>
+<body>
+
+  <h1>QR Code Generator</h1>
+  <p>Paste any link → get the exact QR style from Andrey Zakharov’s CV</p>
+
+  <input type="text" id="url" placeholder="https://and86rey.github.io/portfolio-var-calculator/" value="https://and86rey.github.io/portfolio-var-calculator/" />
+
+  <button onclick="generate()">Generate QR Code</button>
+
+  <div id="qrcode"></div>
+
+  <div class="note">
+    Works offline • No tracking • Open source • Hosted forever on GitHub<br>
+    Live at: <strong>https://and86rey.github.io/qr/</strong>
+  </div>
+
+  <script>
+    function generate() {
+      const url = document.getElementById("url").value.trim();
+      if (!url) { alert("Please enter a URL"); return; }
+
+      const finalUrl = url.match(/^https?:\/\//i) ? url : "https://" + url;
+
+      document.getElementById("qrcode").innerHTML = "";
+
+      new QRCode(document.getElementById("qrcode"), {
+        text: finalUrl,
+        width: 200,
+        height: 200,
+        colorDark: "#000000",
+        colorLight: "#ffffff",
+        correctLevel: QRCode.CorrectLevel.H
+      });
+
+      // Auto-update the input field
+      document.getElementById("url").value = finalUrl;
+    }
+
+    // Generate on Enter key
+    document.getElementById("url").addEventListener("keypress", function(e) {
+      if (e.key === "Enter") generate();
+    });
+
+    // Show demo immediately
+    window.onload = generate;
+  </script>
+
+</body>
+</html>
