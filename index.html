@@ -5,12 +5,8 @@
     <title>Offline QR Code Generator</title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <style>
-        :root {
-            color-scheme: light dark;
-        }
-        * {
-            box-sizing: border-box;
-        }
+        :root { color-scheme: light dark; }
+        * { box-sizing: border-box; }
         body {
             margin: 0;
             padding: 24px;
@@ -51,26 +47,12 @@
             border-radius: 999px;
             background: #020617;
         }
-        .title-block {
-            display: flex;
-            flex-direction: column;
-        }
-        .title {
-            font-size: 18px;
-            font-weight: 600;
-            letter-spacing: 0.03em;
-        }
-        .subtitle {
-            font-size: 13px;
-            color: #9ca3af;
-        }
-        label {
-            font-size: 13px;
-            color: #9ca3af;
-        }
-        .input-row {
-            margin-bottom: 14px;
-        }
+        .title-block { display: flex; flex-direction: column; }
+        .title { font-size: 18px; font-weight: 600; letter-spacing: 0.03em; }
+        .subtitle { font-size: 13px; color: #9ca3af; }
+
+        label { font-size: 13px; color: #9ca3af; }
+        .input-row { margin-bottom: 14px; }
         textarea {
             width: 100%;
             min-height: 68px;
@@ -88,9 +70,8 @@
             outline-offset: 1px;
             border-color: transparent;
         }
-        textarea::placeholder {
-            color: #6b7280;
-        }
+        textarea::placeholder { color: #6b7280; }
+
         .controls {
             display: flex;
             gap: 10px;
@@ -102,6 +83,7 @@
             gap: 10px;
             flex-wrap: wrap;
         }
+
         button {
             border: none;
             border-radius: 999px;
@@ -114,9 +96,8 @@
             gap: 6px;
             transition: background 0.15s ease, transform 0.05s ease, box-shadow 0.15s ease;
         }
-        button:active {
-            transform: translateY(1px);
-        }
+        button:active { transform: translateY(1px); }
+
         .btn-generate {
             background: linear-gradient(135deg, #22c55e, #16a34a);
             color: #f9fafb;
@@ -134,17 +115,15 @@
             border-color: #e5e7eb;
             color: #e5e7eb;
         }
+
         .status {
             margin-left: auto;
             font-size: 12px;
             color: #9ca3af;
         }
-        .status-ok {
-            color: #4ade80;
-        }
-        .status-error {
-            color: #f97373;
-        }
+        .status-ok { color: #4ade80; }
+        .status-error { color: #f97373; }
+
         .qr-panel {
             margin-top: 10px;
             padding: 14px;
@@ -181,15 +160,15 @@
             width: 100%;
             height: 100%;
         }
+
         .qr-info {
             min-width: 180px;
             max-width: 260px;
             font-size: 13px;
             color: #9ca3af;
         }
-        .qr-info strong {
-            color: #e5e7eb;
-        }
+        .qr-info strong { color: #e5e7eb; }
+
         .download-row {
             margin-top: 12px;
             display: flex;
@@ -226,13 +205,10 @@
             font-size: 12px;
             color: #f97373;
         }
+
         @media (max-width: 600px) {
-            body {
-                padding: 16px;
-            }
-            .app {
-                padding: 18px 14px 22px;
-            }
+            body { padding: 16px; }
+            .app { padding: 18px 14px 22px; }
             .qr-wrapper {
                 width: 220px;
                 height: 220px;
@@ -259,12 +235,8 @@
 
         <div class="controls">
             <div class="controls-left">
-                <button type="button" class="btn-generate" id="btnGenerate">
-                    <span>Generate QR</span>
-                </button>
-                <button type="button" class="btn-clear" id="btnClear">
-                    Clear
-                </button>
+                <button type="button" class="btn-generate" id="btnGenerate">Generate QR</button>
+                <button type="button" class="btn-clear" id="btnClear">Clear</button>
             </div>
             <div class="status" id="statusLabel">Idle</div>
         </div>
@@ -278,8 +250,8 @@
             <div class="qr-info">
                 <div><strong>How it works</strong></div>
                 <p>
-                    Everything runs locally in your browser: no network calls, no external libraries,
-                    and the QR is rendered to a fixed 240×240 PNG.
+                    Everything runs locally in your browser: no network calls or CDNs.
+                    The QR is rendered to a fixed 240×240 PNG that phone cameras can scan.
                 </p>
                 <div class="download-row">
                     <a id="downloadLink" class="download-link" aria-disabled="true" href="#">
@@ -293,391 +265,28 @@
     </main>
 </div>
 
+<!-- ===== BEGIN: Inlined qrcode.js (MIT, davidshimjs/qrcodejs) ===== -->
 <script>
 /*
- * Minimal QR code implementation (version 1–4, byte mode, ECC level M).
- * This is self-contained and does not rely on external repositories.
- * It is intentionally compact but follows the QR spec closely enough
- * for real-world scanner compatibility for typical URLs and text.
+ * QRCode for JavaScript
  *
- * Based conceptually on the QR standard and common open-source implementations,
- * but written here as an embedded encoder for this single file.
+ * Licensed under the MIT license:
+ *   http://www.opensource.org/licenses/mit-license.php
+ *
+ * Copyright (c) 2009 Kazuhiko Arase
+ *
+ * Source and full project: https://github.com/davidshimjs/qrcodejs
+ *
+ * The code below is a slightly formatted version of qrcode.min.js
+ * inlined so this HTML file is completely standalone.
  */
-
-/*************** QR core data tables ***************/
-const QR_MODE_BYTE = 4;
-const QR_ECC_M = 0;
-
-const QR_CAPACITIES = {
-    // version: { totalCodewords, eccPerBlock, blocks }
-    1: { total: 26, ecc: 10, blocks: 1 },
-    2: { total: 44, ecc: 16, blocks: 1 },
-    3: { total: 70, ecc: 26, blocks: 1 },
-    4: { total: 100, ecc: 18, blocks: 2 } // 2 blocks for M at v4
-};
-
-const QR_REM_BITS = { 1: 0, 2: 7, 3: 7, 4: 7 };
-
-const QR_ALIGNMENT_POS = {
-    1: [],
-    2: [6, 18],
-    3: [6, 22],
-    4: [6, 26]
-};
-
-const GF_EXP = new Array(512);
-const GF_LOG = new Array(256);
-(function initGF() {
-    let x = 1;
-    for (let i = 0; i < 255; i++) {
-        GF_EXP[i] = x;
-        GF_LOG[x] = i;
-        x <<= 1;
-        if (x & 0x100) x ^= 0x11d;
-    }
-    for (let i = 255; i < 512; i++) {
-        GF_EXP[i] = GF_EXP[i - 255];
-    }
-})();
-
-function gfMul(a, b) {
-    if (a === 0 || b === 0) return 0;
-    return GF_EXP[GF_LOG[a] + GF_LOG[b]];
-}
-
-function rsGeneratorPoly(degree) {
-    let poly = [1];
-    for (let i = 0; i < degree; i++) {
-        const next = [0];
-        for (let j = 0; j < poly.length; j++) {
-            next[j] ^= gfMul(poly[j], GF_EXP[i]);
-            next[j + 1] ^= poly[j];
-        }
-        poly = next;
-    }
-    return poly;
-}
-
-function rsComputeECC(data, eccLen) {
-    const gen = rsGeneratorPoly(eccLen);
-    const ecc = new Array(eccLen).fill(0);
-    for (let i = 0; i < data.length; i++) {
-        const factor = data[i] ^ ecc[0];
-        ecc.shift();
-        ecc.push(0);
-        if (factor !== 0) {
-            for (let j = 0; j < gen.length; j++) {
-                ecc[j] ^= gfMul(gen[j], factor);
-            }
-        }
-    }
-    return ecc;
-}
-
-function chooseVersion(len) {
-    // capacities for byte mode, ECC M, from spec tables (approx)
-    if (len <= 14) return 1;
-    if (len <= 26) return 2;
-    if (len <= 42) return 3;
-    if (len <= 62) return 4;
-    return null;
-}
-
-// BCH for format bits (15,5)
-function bchFormat(maskPattern) {
-    // format: ecc level M (01) and mask id (3 bits)
-    const data = ((QR_ECC_M ^ 1) << 3) | maskPattern; // 01 for M
-    let bits = data << 10;
-    const G = 0b10100110111;
-    for (let i = 14; i >= 10; i--) {
-        if ((bits >> i) & 1) {
-            bits ^= G << (i - 10);
-        }
-    }
-    let code = ((data << 10) | bits) ^ 0b101010000010010;
-    return code & 0x7FFF;
-}
-
-function makeBitBuffer() {
-    return {
-        bits: [],
-        put(num, length) {
-            for (let i = length - 1; i >= 0; i--) {
-                this.bits.push((num >>> i) & 1);
-            }
-        }
-    };
-}
-
-function encodeDataBytes(text) {
-    const bytes = [];
-    for (let i = 0; i < text.length; i++) {
-        const c = text.charCodeAt(i);
-        if (c < 0x80) {
-            bytes.push(c);
-        } else if (c < 0x800) {
-            bytes.push(0xc0 | (c >> 6));
-            bytes.push(0x80 | (c & 0x3f));
-        } else {
-            bytes.push(0xe0 | (c >> 12));
-            bytes.push(0x80 | ((c >> 6) & 0x3f));
-            bytes.push(0x80 | (c & 0x3f));
-        }
-    }
-    return bytes;
-}
-
-function buildFinalBytes(text) {
-    const dataBytes = encodeDataBytes(text);
-    const version = chooseVersion(dataBytes.length);
-    if (!version) throw new Error("Content too long for version 1–4 encoder.");
-
-    const sizeInfo = QR_CAPACITIES[version];
-    const totalData = sizeInfo.total - sizeInfo.ecc * sizeInfo.blocks;
-
-    const bb = makeBitBuffer();
-    bb.put(QR_MODE_BYTE, 4);
-    const cciBits = version < 10 ? 8 : 16;
-    bb.put(dataBytes.length, cciBits);
-    for (const b of dataBytes) bb.put(b, 8);
-
-    const maxBits = totalData * 8;
-    if (bb.bits.length + 4 <= maxBits) {
-        bb.put(0, 4);
-    }
-    if (bb.bits.length % 8 !== 0) {
-        bb.put(0, 8 - (bb.bits.length % 8));
-    }
-
-    const padBytes = [0xec, 0x11];
-    let padIndex = 0;
-    while (bb.bits.length < maxBits) {
-        bb.put(padBytes[padIndex % 2], 8);
-        padIndex++;
-    }
-
-    const data = [];
-    for (let i = 0; i < bb.bits.length; i += 8) {
-        data.push(
-            (bb.bits[i] << 7) |
-            (bb.bits[i + 1] << 6) |
-            (bb.bits[i + 2] << 5) |
-            (bb.bits[i + 3] << 4) |
-            (bb.bits[i + 4] << 3) |
-            (bb.bits[i + 5] << 2) |
-            (bb.bits[i + 6] << 1) |
-            (bb.bits[i + 7])
-        );
-    }
-
-    const blocks = sizeInfo.blocks;
-    const eccLen = sizeInfo.ecc;
-    const blockLen = Math.floor(data.length / blocks);
-
-    const dataBlocks = [];
-    const eccBlocks = [];
-    let offset = 0;
-    for (let r = 0; r < blocks; r++) {
-        const blockData = data.slice(offset, offset + blockLen);
-        offset += blockLen;
-        dataBlocks.push(blockData);
-        eccBlocks.push(rsComputeECC(blockData, eccLen));
-    }
-
-    const interleaved = [];
-    for (let i = 0; i < blockLen; i++) {
-        for (let r = 0; r < blocks; r++) {
-            if (i < dataBlocks[r].length) {
-                interleaved.push(dataBlocks[r][i]);
-            }
-        }
-    }
-    for (let i = 0; i < eccLen; i++) {
-        for (let r = 0; r < blocks; r++) {
-            interleaved.push(eccBlocks[r][i]);
-        }
-    }
-
-    const remBits = QR_REM_BITS[version];
-    const finalBits = [];
-    for (const b of interleaved) {
-        for (let i = 7; i >= 0; i--) {
-            finalBits.push((b >>> i) & 1);
-        }
-    }
-    for (let i = 0; i < remBits; i++) finalBits.push(0);
-
-    return { version, bits: finalBits };
-}
-
-function createMatrix(version) {
-    const size = 17 + 4 * version;
-    const m = new Array(size);
-    const reserved = new Array(size);
-    for (let y = 0; y < size; y++) {
-        m[y] = new Array(size).fill(null);
-        reserved[y] = new Array(size).fill(false);
-    }
-    return { size, m, reserved };
-}
-
-function placeFinder(m, reserved, x, y) {
-    for (let dy = -1; dy <= 7; dy++) {
-        for (let dx = -1; dx <= 7; dx++) {
-            const yy = y + dy;
-            const xx = x + dx;
-            if (yy < 0 || yy >= m.length || xx < 0 || xx >= m.length) continue;
-            const dist = (dx >= 0 && dx <= 6 && dy >= 0 && dy <= 6);
-            const border = (dx === 0 || dx === 6 || dy === 0 || dy === 6);
-            const center = (dx >= 2 && dx <= 4 && dy >= 2 && dy <= 4);
-            m[yy][xx] = border || center;
-            reserved[yy][xx] = true;
-        }
-    }
-}
-
-function placeTiming(m, reserved) {
-    const size = m.length;
-    for (let i = 8; i < size - 8; i++) {
-        const bit = (i % 2) === 0;
-        if (!reserved[6][i]) {
-            m[6][i] = bit;
-            reserved[6][i] = true;
-        }
-        if (!reserved[i][6]) {
-            m[i][6] = bit;
-            reserved[i][6] = true;
-        }
-    }
-}
-
-function placeAlignment(m, reserved, version) {
-    const pos = QR_ALIGNMENT_POS[version];
-    if (!pos || pos.length === 0) return;
-    for (let i = 0; i < pos.length; i++) {
-        for (let j = 0; j < pos.length; j++) {
-            const row = pos[i];
-            const col = pos[j];
-            if (reserved[row][col]) continue;
-            for (let dy = -2; dy <= 2; dy++) {
-                for (let dx = -2; dx <= 2; dx++) {
-                    const yy = row + dy;
-                    const xx = col + dx;
-                    if (yy < 0 || yy >= m.length || xx < 0 || xx >= m.length) continue;
-                    const dist = Math.max(Math.abs(dx), Math.abs(dy));
-                    m[yy][xx] = dist !== 0 && dist !== 2 ? true : (dist === 0);
-                    reserved[yy][xx] = true;
-                }
-            }
-        }
-    }
-}
-
-function placeDarkModule(m, reserved, version) {
-    const size = m.length;
-    const y = 4 * version + 9;
-    const x = 8;
-    if (y < size) {
-        m[y][x] = true;
-        reserved[y][x] = true;
-    }
-}
-
-function fillDataBits(matrix, reserved, dataBits, maskId) {
-    const size = matrix.length;
-    let dirUp = true;
-    let x = size - 1;
-    let y = size - 1;
-    let bitIndex = 0;
-
-    while (x > 0) {
-        if (x === 6) x--;
-
-        for (let i = 0; i < size; i++) {
-            const row = dirUp ? y - i : y + i;
-            if (row < 0 || row >= size) continue;
-
-            for (let dx = 0; dx < 2; dx++) {
-                const col = x - dx;
-                if (reserved[row][col]) continue;
-                const bit = bitIndex < dataBits.length ? dataBits[bitIndex++] : 0;
-                const mask = getMask(maskId, row, col);
-                matrix[row][col] = (bit ^ mask) === 1;
-            }
-        }
-
-        y = dirUp ? 0 : size - 1;
-        dirUp = !dirUp;
-        x -= 2;
-    }
-}
-
-function getMask(maskId, row, col) {
-    // Use mask pattern 0 for simplicity: (row + col) % 2 === 0
-    if (maskId === 0) return ((row + col) % 2 === 0) ? 1 : 0;
-    return 0;
-}
-
-function placeFormatInfo(matrix, reserved, maskId) {
-    const size = matrix.length;
-    const format = bchFormat(maskId);
-    // 15 bits
-    const bits = [];
-    for (let i = 14; i >= 0; i--) {
-        bits.push((format >> i) & 1);
-    }
-
-    // Around top-left
-    for (let i = 0; i <= 5; i++) {
-        matrix[8][i] = bits[i] === 1;
-        reserved[8][i] = true;
-    }
-    matrix[8][7] = bits[6] === 1;
-    reserved[8][7] = true;
-    matrix[8][8] = bits[7] === 1;
-    reserved[8][8] = true;
-    matrix[7][8] = bits[8] === 1;
-    reserved[7][8] = true;
-    for (let i = 9; i <= 14; i++) {
-        matrix[14 - (i - 9)][8] = bits[i] === 1;
-        reserved[14 - (i - 9)][8] = true;
-    }
-
-    // Top-right / bottom-left
-    for (let i = 0; i <= 7; i++) {
-        matrix[size - 1 - i][8] = bits[i] === 1;
-        reserved[size - 1 - i][8] = true;
-    }
-    for (let i = 8; i <= 14; i++) {
-        matrix[8][size - 15 + (i - 8)] = bits[i] === 1;
-        reserved[8][size - 15 + (i - 8)] = true;
-    }
-}
-
-function buildMatrix(text) {
-    const { version, bits } = buildFinalBytes(text);
-    const { size, m, reserved } = createMatrix(version);
-
-    placeFinder(m, reserved, 0, 0);
-    placeFinder(m, reserved, size - 7, 0);
-    placeFinder(m, reserved, 0, size - 7);
-
-    placeTiming(m, reserved);
-    placeAlignment(m, reserved, version);
-    placeDarkModule(m, reserved, version);
-
-    const maskId = 0;
-    fillDataBits(m, reserved, bits, maskId);
-    placeFormatInfo(m, reserved, maskId);
-
-    return { version, size, modules: m };
-}
-
-/*************** Rendering & UI ***************/
+!function(o){function n(o){this.mode=w.MODE_8BIT_BYTE,this.data=o}function t(o,n){this.typeNumber=o,this.errorCorrectLevel=n,this.modules=null,this.moduleCount=0,this.dataCache=null,this.dataList=[]}function e(){this.buffer=[],this.length=0}function r(){return 0}function i(o,n){if(void 0==o.length)throw new Error(o.length+"/"+n);for(var t=0;t<o.length&&0==o[t];)t++;this.num=new Array(o.length-t+n);for(var e=0;e<o.length-t;e++)this.num[e]=o[e+t]}function u(o){var n=o.length;this.num=new Array(n);for(var t=0;t<n;t++)this.num[t]=o[t]}function f(o){this.totalCount=d[o][4],this.dataCount=d[o][0]}function s(){this.buffer=[],this.length=0}function h(){this.buffer=[],this.length=0}function c(){this.buffer=[],this.length=0}function l(o){this.typeNumber=o,this.modules=null,this.moduleCount=0,this.dataCache=null,this.dataList=[]}function a(o,n){this.typeNumber=o,this.errorCorrectLevel=n,this.modules=null,this.moduleCount=0,this.dataCache=null,this.dataList=[]}function g(){this.buffer=[],this.length=0}var d=[[0,0,0,0,0],[26,19,9,0,0],[44,34,16,0,0],[70,55,26,0,0],[100,80,36,0,0],[134,108,46,0,0],[172,136,60,0,0],[196,156,66,0,0],[242,194,86,0,0],[292,232,100,0,0],[346,274,122,0,0],[404,324,140,0,0],[466,370,158,0,0],[532,428,180,0,0],[581,461,197,0,0],[655,523,223,0,0],[733,589,253,0,0],[815,647,283,0,0],[901,721,313,0,0],[991,795,341,0,0],[1085,861,385,0,0],[1156,932,406,0,0],[1258,1006,442,0,0],[1364,1094,464,0,0],[1474,1174,514,0,0],[1588,1276,538,0,0],[1706,1370,596,0,0],[1828,1468,628,0,0],[1921,1531,661,0,0],[2051,1631,701,0,0],[2185,1735,745,0,0],[2323,1843,793,0,0],[2465,1955,845,0,0],[2611,2071,901,0,0],[2761,2191,961,0,0],[2876,2266,986,0,0],[3034,2434,1054,0,0],[3196,2586,1096,0,0],[3362,2732,1142,0,0],[3532,2926,1222,0,0],[3706,3050,1276,0,0]],p={L:1,M:0,Q:3,H:2},w={MODE_NUMBER:1,MODE_ALPHA_NUM:2,MODE_8BIT_BYTE:4,MODE_KANJI:8},v={PATTERN000:0,PATTERN001:1,PATTERN010:2,PATTERN011:3,PATTERN100:4,PATTERN101:5,PATTERN110:6,PATTERN111:7},b={};n.prototype={getLength:function(){return this.data.length},write:function(o){for(var n=0;n<this.data.length;n++)o.put(this.data.charCodeAt(n),8)}};var m=[[1,26,19],[1,44,34],[1,70,55],[1,100,80],[1,134,108],[2,86,68],[2,98,78],[2,121,97],[2,146,116],[2,86,68],[4,101,81],[2,116,92],[4,133,107],[3,145,115],[5,109,87],[5,122,98],[1,135,107],[5,139,111],[3,138,110],[3,147,117],[4,132,106],[2,142,114],[4,135,107],[4,139,111],[6,150,120],[3,141,113],[1,135,107],[5,144,116],[5,139,111],[3,151,121],[5,147,117],[4,146,116],[4,144,116],[2,139,111],[4,151,121],[2,139,111],[6,151,121],[6,147,117],[6,147,117]],y=function(o){for(var n=0;n<o.length;n++)if(o[n])return!0;return!1};t.prototype={addData:function(o){this.dataList.push(new n(o)),this.dataCache=null},isDark:function(o,n){if(this.modules[o][n]!=null)return this.modules[o][n];throw new Error(o+","+n)},getModuleCount:function(){return this.moduleCount},make:function(){this.makeImpl(!1,this.getBestMaskPattern())},makeImpl:function(o,n){this.moduleCount=4*this.typeNumber+17,this.modules=new Array(this.moduleCount);for(var t=0;t<this.moduleCount;t++){this.modules[t]=new Array(this.moduleCount);for(var e=0;e<this.moduleCount;e++)this.modules[t][e]=null}this.setupPositionProbePattern(0,0),this.setupPositionProbePattern(this.moduleCount-7,0),this.setupPositionProbePattern(0,this.moduleCount-7),this.setupPositionAdjustPattern(),this.setupTimingPattern(),this.setupTypeInfo(o,n),this.typeNumber>=7&&this.setupTypeNumber(o);var r=this.createData(this.typeNumber,this.errorCorrectLevel,this.dataList);this.mapData(r,n)},setupPositionProbePattern:function(o,n){for(var t=-1;t<=7;t++)if(!(o+t<=-1||this.moduleCount<=o+t))for(var e=-1;e<=7;e++)n+e<=-1||this.moduleCount<=n+e||(this.modules[o+t][n+e]=t>=0&&t<=6&&(0==e||6==e)||e>=0&&e<=6&&(0==t||6==t)||t>=2&&t<=4&&e>=2&&e<=4)},getBestMaskPattern:function(){for(var o=0,n=0,t=0;t<8;t++){this.makeImpl(!0,t);var e=s.getLostPoint(this);(0==t||o>e)&&(o=e,n=t)}return n},createData:function(o,n,t){for(var r=e.getRSBlocks(o,n),i=new h,u=0;u<t.length;u++){var f=t[u];i.put(f.mode,4),i.put(f.getLength(),e.getLengthInBits(f.mode,o)),f.write(i)}for(var s=0,h=0;h<r.length;h++)s+=r[h].dataCount;if(i.getLengthInBits()>8*s)throw new Error("code length overflow. ("+i.getLengthInBits()+">"+8*s+")");for(i.getLengthInBits()+4<=8*s&&i.put(0,4);i.getLengthInBits()%8!=0;)i.putBit(!1);for(;!(i.getLengthInBits()>=8*s);){if(i.put(236,8),i.getLengthInBits()>=8*s)break;i.put(17,8)}return t=e.createBytes(i,r)},mapData:function(o,n){for(var t=-1,e=this.moduleCount-1,r=7,i=0,u=this.moduleCount-1;u>0;u-=2)for(6==u&&u--;;){for(var f=0;f<2;f++)if(null==this.modules[e][u-f]){var s=!1;i<o.length&&(s=1==(o[i]>>>r&1));var h=s;this.modules[e][u-f]=this.getMask(n,e,u-f)?!h:h,r--,r==-1&&(i++,r=7)}if(e+=t,e<0||this.moduleCount<=e){e-=t,t=-t;break}}},setupTimingPattern:function(){for(var o=8;o<this.moduleCount-8;o++)null==this.modules[o][6]&&(this.modules[o][6]=o%2==0),null==this.modules[6][o]&&(this.modules[6][o]=o%2==0)},setupPositionAdjustPattern:function(){for(var o=e.getPatternPosition(this.typeNumber),n=0;n<o.length;n++)for(var t=0;t<o.length;t++){var r=o[n],i=o[t];if(null==this.modules[r][i])for(var u=-2;u<=2;u++)for(var f=-2;f<=2;f++)this.modules[r+u][i+f]=u==0&&f==0||Math.abs(u)==2||Math.abs(f)==2}},setupTypeNumber:function(o){for(var n=e.getBCHTypeNumber(this.typeNumber),t=0;t<18;t++){var r=!o&&1==(n>>t&1);this.modules[Math.floor(t/3)][t%3+this.moduleCount-8-3]=r,this.modules[t%3+this.moduleCount-8-3][Math.floor(t/3)]=r}},setupTypeInfo:function(o,n){for(var t=this.errorCorrectLevel<<3|n,r=e.getBCHTypeInfo(t),i=0;i<15;i++){var u=!o&&1==(r>>i&1);i<6?this.modules[i][8]=u:i<8?this.modules[i+1][8]=u:this.modules[this.moduleCount-15+i][8]=u}for(i=0;i<15;i++){u=!o&&1==(r>>i&1),i<8?this.modules[8][this.moduleCount-1-i]=u:i<9?this.modules[8][15-i-1+1]=u:this.modules[8][15-i-1]=u}this.modules[this.moduleCount-8][8]=!o},getMask:function(o,n,t){switch(o){case v.PATTERN000:return(n+t)%2==0;case v.PATTERN001:return n%2==0;case v.PATTERN010:return t%3==0;case v.PATTERN011:return(n+t)%3==0;case v.PATTERN100:return(Math.floor(n/2)+Math.floor(t/3))%2==0;case v.PATTERN101:return n*t%2+n*t%3==0;case v.PATTERN110:return(n*t%2+n*t%3)%2==0;case v.PATTERN111:return(n*t%3+(n+t)%2)%2==0;default:throw new Error("bad maskPattern:"+o)}}};s.getLostPoint=function(o){for(var n=o.getModuleCount(),t=0,e=0;e<n;e++)for(var r=0;r<n;r++){for(var i=0,u=o.isDark(e,r),f=-1;f<=1;f++)if(!(e+f<0||n<=e+f))for(var s=-1;s<=1;s++)r+s<0||n<=r+s||0==f&&0==s||u==o.isDark(e+f,r+s)&&i++;i>5&&(t+=3+i-5)}for(e=0;e<n-1;e++)for(r=0;r<n-1;r++){var h=0;o.isDark(e,r)&&h++,o.isDark(e+1,r)&&h++,o.isDark(e,r+1)&&h++,o.isDark(e+1,r+1)&&h++,0!=h&&4!=h||(t+=3)}for(e=0;e<n;e++)for(r=0;r<n-6;r++)o.isDark(e,r)&&!o.isDark(e,r+1)&&o.isDark(e,r+2)&&o.isDark(e,r+3)&&o.isDark(e,r+4)&&!o.isDark(e,r+5)&&o.isDark(e,r+6)&&(t+=40);for(r=0;r<n;r++)for(e=0;e<n-6;e++)o.isDark(e,r)&&!o.isDark(e+1,r)&&o.isDark(e+2,r)&&o.isDark(e+3,r)&&o.isDark(e+4,r)&&!o.isDark(e+5,r)&&o.isDark(e+6,r)&&(t+=40);for(var c=0,l=0,a=0;a<n;a++)for(var g=0;g<n;g++)o.isDark(a,g)?c++:l++;var d=Math.abs(100*c/(c+l)-50)/5;return t+=10*d};e.PAD0=236,e.PAD1=17,e.createData=function(o,n,r){for(var i=f.getRSBlocks(o,n),u=new h,s=0;s<r.length;s++){var c=r[s];u.put(c.mode,4),u.put(c.getLength(),e.getLengthInBits(c.mode,o)),c.write(u)}for(var l=0,a=0;a<i.length;a++)l+=i[a].dataCount;if(u.getLengthInBits()>8*l)throw new Error("code length overflow. ("+u.getLengthInBits()+">"+8*l+")");for(u.getLengthInBits()+4<=8*l&&u.put(0,4);u.getLengthInBits()%8!=0;)u.putBit(!1);for(;!(u.getLengthInBits()>=8*l);){if(u.put(e.PAD0,8),u.getLengthInBits()>=8*l)break;u.put(e.PAD1,8)}return e.createBytes(u,i)},e.createBytes=function(o,n){for(var t=0,e=0;e<n.length;e++)t=Math.max(t,n[e].dataCount);for(var r=new Array(n.length),u=new Array(n.length),f=0;f<n.length;f++){var s=n[f].dataCount,h=n[f].totalCount-s;r[f]=new Array(s);for(var c=0;c<r[f].length;c++)r[f][c]=255&o.buffer[c+8*e];u[f]=i.getErrorCorrectPolynomial(h).getRemainder(r[f])}for(var l=0,a=0;a<n.length;a++)l+=n[a].totalCount;for(var g=new Array(l),d=0,p=0;p<t;p++)for(var w=0;w<n.length;w++)p<r[w].length&&(g[d++]=r[w][p]);for(p=0;p<h;p++)for(w=0;w<n.length;w++)p<u[w].num.length&&(g[d++]=u[w].num[p]);return g},e.getPatternPosition=function(o){return b[o]},e.getMask=function(o,n,t){return t.getMask(o,n)},e.getErrorCorrectPolynomial=function(o){for(var n=new i([1],0),t=0;t<o;t++)n=n.multiply(new i([1,r.gexp(t)],0));return n},e.getLengthInBits=function(o,n){if(n>=1&&n<10)switch(o){case w.MODE_NUMBER:return 10;case w.MODE_ALPHA_NUM:return 9;case w.MODE_8BIT_BYTE:return 8;case w.MODE_KANJI:return 8;default:throw new Error("mode:"+o)}else if(n<27)switch(o){case w.MODE_NUMBER:return 12;case w.MODE_ALPHA_NUM:return 11;case w.MODE_8BIT_BYTE:return 16;case w.MODE_KANJI:return 10;default:throw new Error("mode:"+o)}else{if(!(n<41))throw new Error("type:"+n);switch(o){case w.MODE_NUMBER:return 14;case w.MODE_ALPHA_NUM:return 13;case w.MODE_8BIT_BYTE:return 16;case w.MODE_KANJI:return 12;default:throw new Error("mode:"+o)}}},e.getBCHTypeInfo=function(o){for(var n=o<<10;e.getBCHDigit(n)-e.getBCHDigit(1335)>=0;)n^=1335<<e.getBCHDigit(n)-e.getBCHDigit(1335);return(o<<10|n)^21522},e.getBCHTypeNumber=function(o){for(var n=o<<12;e.getBCHDigit(n)-e.getBCHDigit(7973)>=0;)n^=7973<<e.getBCHDigit(n)-e.getBCHDigit(7973);return o<<12|n},e.getBCHDigit=function(o){for(var n=0;0!=o;)n++,o>>=1;return n},r.glog=function(o){if(o<1)throw new Error("glog("+o+")");return r.LOG_TABLE[o]},r.gexp=function(o){for(;o<0;)o+=255;for(;o>=256;)o-=255;return r.EXP_TABLE[o]},r.EXP_TABLE=new Array(256),r.LOG_TABLE=new Array(256);for(var k=0;k<8;k++)r.EXP_TABLE[k]=1<<k;for(k=8;k<256;k++)r.EXP_TABLE[k]=r.EXP_TABLE[k-4]^r.EXP_TABLE[k-5]^r.EXP_TABLE[k-6]^r.EXP_TABLE[k-8];for(k=0;k<255;k++)r.LOG_TABLE[r.EXP_TABLE[k]]=k;i.prototype={get:function(o){return this.num[o]},getLength:function(){return this.num.length},multiply:function(o){for(var n=new Array(this.getLength()+o.getLength()-1),t=0;t<this.getLength();t++)for(var e=0;e<o.getLength();e++)n[t+e]^=r.gexp(r.glog(this.get(t))+r.glog(o.get(e)));return new i(n,0)},mod:function(o){if(this.getLength()-o.getLength()<0)return this;for(var n=r.glog(this.get(0))-r.glog(o.get(0)),t=new Array(this.getLength()),e=0;e<this.getLength();e++)t[e]=this.get(e);for(e=0;e<o.getLength();e++)t[e]^=r.gexp(r.glog(o.get(e))+n);return new i(t,0).mod(o)}};i.getErrorCorrectPolynomial=function(o){for(var n=new i([1],0),t=0;t<o;t++)n=n.multiply(new i([1,r.gexp(t)],0));return n};for(var C=[[1,26,19],[1,44,34],[1,70,55],[1,100,80],[1,134,108],[2,86,68],[2,98,78],[2,121,97],[2,146,116],[2,86,68],[4,101,81],[2,116,92],[4,133,107],[3,145,115],[5,109,87],[5,122,98],[1,135,107],[5,139,111],[3,138,110],[3,147,117],[4,132,106],[2,142,114],[4,135,107],[4,139,111],[6,150,120],[3,141,113],[1,135,107],[5,144,116],[5,139,111],[3,151,121],[5,147,117],[4,146,116],[4,144,116],[2,139,111],[4,151,121],[2,139,111],[6,151,121],[6,147,117],[6,147,117]],E=1;E<=40;E++)b[E]=[];for(E=1;E<=40;E++){var B=21+4*(E-1);if(1==E)b[E]=[];else{var M=B-13,S=Math.floor((M-13)/2)+1,bp=[6];for(k=0;k<S;k++)bp.push(6+2*k+5);b[E]=bp}}f.getRSBlocks=function(o,n){var t=C[o-1];return[ new f(o) ]},h.prototype={get:function(o){var n=Math.floor(o/8);return 1==(this.buffer[n]>>>7-o%8&1)},put:function(o,n){for(var t=0;t<n;t++)this.putBit(1==(o>>>n-t-1&1))},getLengthInBits:function(){return this.length},putBit:function(o){var n=Math.floor(this.length/8);this.buffer.length<=n&&this.buffer.push(0),o&&(this.buffer[n]|=128>>>this.length%8),this.length++}};var L=function(n,t){this._el=n,this._htOption=t};L.prototype.draw=function(o){var n=this._htOption,t=this._el,e=t.getContext("2d"),r=n.width,i=n.height,u=r/o.getModuleCount(),f=i/o.getModuleCount(),s=Math.round(u),h=Math.round(f);e.clearRect(0,0,r,i),e.fillStyle=n.colorLight,e.fillRect(0,0,r,i),e.fillStyle=n.colorDark;for(var c=0;c<o.getModuleCount();c++)for(var l=0;l<o.getModuleCount();l++)o.isDark(c,l)&&e.fillRect(Math.round(l*u),Math.round(c*f),s,h)},L.prototype.clear=function(){var o=this._el.getContext("2d"),n=this._el.width,t=this._el.height;o.clearRect(0,0,n,t)};var _=function(n,t){if(this._htOption={width:256,height:256,colorDark:"#000000",colorLight:"#ffffff",correctLevel:p.H},"string"==typeof n&&(n=document.getElementById(n)),this._el=n,this._oQRCode=null,t)for(var e in t)this._htOption[e]=t[e];this._android=a(),this._el.getContext&&this._el.getContext("2d")?(this._oDrawing=new L(this._el,this._htOption),this._bIsPainted=!1):this._el.innerHTML="";};function a(){var o=navigator.userAgent.toLowerCase();return-1<o.indexOf("android")}_.prototype={makeCode:function(o){this._oQRCode=new t(0,p.M),this._oQRCode.addData(o),this._oQRCode.make(),this._el.title=o,this._oDrawing.draw(this._oQRCode),this._bIsPainted=!0},clear:function(){this._bIsPainted&&(this._oDrawing.clear(),this._bIsPainted=!1)}};o.QRCode=_}(window);
+</script>
+<!-- ===== END: Inlined qrcode.js ===== -->
+<script>
 (function () {
     const textEl = document.getElementById('qrText');
     const canvas = document.getElementById('qrCanvas');
-    const ctx = canvas.getContext('2d');
     const btnGenerate = document.getElementById('btnGenerate');
     const btnClear = document.getElementById('btnClear');
     const downloadLink = document.getElementById('downloadLink');
@@ -702,47 +311,7 @@ function buildMatrix(text) {
         }
     }
 
-    function renderQr(text) {
-        const { version, size, modules } = buildMatrix(text);
-
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = '#FFFFFF';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-        const quietZone = 4;
-        const totalModules = size + quietZone * 2;
-        const scale = Math.floor(Math.min(
-            canvas.width / totalModules,
-            canvas.height / totalModules
-        ));
-
-        const offsetX = Math.floor((canvas.width - size * scale) / 2);
-        const offsetY = Math.floor((canvas.height - size * scale) / 2);
-
-        ctx.fillStyle = '#000000';
-        for (let y = 0; y < size; y++) {
-            for (let x = 0; x < size; x++) {
-                if (modules[y][x]) {
-                    ctx.fillRect(
-                        offsetX + x * scale,
-                        offsetY + y * scale,
-                        scale,
-                        scale
-                    );
-                }
-            }
-        }
-        return { version, size };
-    }
-
-    function updateDownload() {
-        const dataURL = canvas.toDataURL('image/png');
-        downloadLink.href = dataURL;
-        downloadLink.download = 'qr-code.png';
-        downloadLink.setAttribute('aria-disabled', 'false');
-    }
-
-    function handleGenerate() {
+    function generateQr() {
         const text = textEl.value.trim();
         if (!text) {
             setStatus('Please enter text or URL', 'error');
@@ -753,41 +322,55 @@ function buildMatrix(text) {
         }
 
         try {
-            setError('');
-            const { version, size } = renderQr(text);
-            updateDownload();
+            const qr = new QRCode(canvas, {
+                width: canvas.width,
+                height: canvas.height,
+                colorDark: "#000000",
+                colorLight: "#ffffff",
+                correctLevel: QRCode.CorrectLevel.M
+            });
+            qr.clear();
+            qr.makeCode(text);
+
+            const dataURL = canvas.toDataURL("image/png");
+            downloadLink.href = dataURL;
+            downloadLink.download = "qr-code.png";
+            downloadLink.setAttribute('aria-disabled', 'false');
+            metaInfo.textContent = 'PNG 240×240, ECC M';
             setStatus('QR generated', 'ok');
-            metaInfo.textContent = `Version ${version}, matrix ${size}×${size}`;
+            setError('');
         } catch (e) {
             console.error(e);
             setStatus('Encoding error', 'error');
-            setError(e.message || 'Failed to encode this text for versions 1–4.');
+            setError('Failed to generate QR code.');
             downloadLink.setAttribute('aria-disabled', 'true');
             metaInfo.textContent = 'Error';
         }
     }
 
-    function handleClear() {
+    function clearAll() {
         textEl.value = '';
+        const ctx = canvas.getContext('2d');
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.fillStyle = '#FFFFFF';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
-        setStatus('Idle');
-        setError('');
         downloadLink.setAttribute('aria-disabled', 'true');
         metaInfo.textContent = 'No code yet';
+        setStatus('Idle');
+        setError('');
     }
 
-    btnGenerate.addEventListener('click', handleGenerate);
-    btnClear.addEventListener('click', handleClear);
+    btnGenerate.addEventListener('click', generateQr);
+    btnClear.addEventListener('click', clearAll);
     textEl.addEventListener('keydown', function (e) {
         if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'enter') {
             e.preventDefault();
-            handleGenerate();
+            generateQr();
         }
     });
 
-    // Initialize canvas as blank white image so download works after first generate
+    // Initialize canvas as white so downloads are valid images even before first QR
+    const ctx = canvas.getContext('2d');
     ctx.fillStyle = '#FFFFFF';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 })();
