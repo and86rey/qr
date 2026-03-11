@@ -2,30 +2,795 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Standalone QR Generator – CV Style (No APIs)</title>
+    <title>Offline QR Code Generator</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
     <style>
-        body { font-family: Arial, sans-serif; max-width: 600px; margin: 40px auto; padding: 20px; background: #f8f8f8; }
-        input, button { padding: 12px; font-size: 16px; }
-        input { width: 100%; box-sizing: border-box; margin-bottom: 10px; }
-        canvas { border: 1px solid #ddd; background: white; margin-top: 20px; }
-        .download { margin-top: 10px; padding: 10px 20px; background: #0066cc; color: white; text-decoration: none; border-radius: 4px; display:inline-block; }
+        :root {
+            color-scheme: light dark;
+        }
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            margin: 0;
+            padding: 24px;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background: #0f172a;
+            color: #e5e7eb;
+            display: flex;
+            justify-content: center;
+        }
+        .app {
+            width: 100%;
+            max-width: 640px;
+            background: radial-gradient(circle at top left, #1e293b 0, #020617 60%);
+            border-radius: 18px;
+            padding: 24px 20px 28px;
+            box-shadow: 0 18px 40px rgba(0,0,0,0.6);
+            border: 1px solid rgba(148,163,184,0.3);
+        }
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 18px;
+        }
+        .logo-dot {
+            width: 26px;
+            height: 26px;
+            border-radius: 999px;
+            background: conic-gradient(from 200deg, #22c55e, #3b82f6, #a855f7, #22c55e);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 0 3px rgba(15,23,42,0.8);
+        }
+        .logo-inner {
+            width: 14px;
+            height: 14px;
+            border-radius: 999px;
+            background: #020617;
+        }
+        .title-block {
+            display: flex;
+            flex-direction: column;
+        }
+        .title {
+            font-size: 18px;
+            font-weight: 600;
+            letter-spacing: 0.03em;
+        }
+        .subtitle {
+            font-size: 13px;
+            color: #9ca3af;
+        }
+        label {
+            font-size: 13px;
+            color: #9ca3af;
+        }
+        .input-row {
+            margin-bottom: 14px;
+        }
+        textarea {
+            width: 100%;
+            min-height: 68px;
+            resize: vertical;
+            padding: 10px 11px;
+            border-radius: 10px;
+            border: 1px solid rgba(148,163,184,0.4);
+            background: rgba(15,23,42,0.9);
+            color: #e5e7eb;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+        textarea:focus {
+            outline: 2px solid #38bdf8;
+            outline-offset: 1px;
+            border-color: transparent;
+        }
+        textarea::placeholder {
+            color: #6b7280;
+        }
+        .controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        .controls-left {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        button {
+            border: none;
+            border-radius: 999px;
+            padding: 9px 16px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: background 0.15s ease, transform 0.05s ease, box-shadow 0.15s ease;
+        }
+        button:active {
+            transform: translateY(1px);
+        }
+        .btn-generate {
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+            color: #f9fafb;
+            box-shadow: 0 8px 20px rgba(16,185,129,0.35);
+        }
+        .btn-generate:hover {
+            background: linear-gradient(135deg, #16a34a, #15803d);
+        }
+        .btn-clear {
+            background: rgba(15,23,42,0.9);
+            color: #9ca3af;
+            border: 1px solid rgba(148,163,184,0.4);
+        }
+        .btn-clear:hover {
+            border-color: #e5e7eb;
+            color: #e5e7eb;
+        }
+        .status {
+            margin-left: auto;
+            font-size: 12px;
+            color: #9ca3af;
+        }
+        .status-ok {
+            color: #4ade80;
+        }
+        .status-error {
+            color: #f97373;
+        }
+        .qr-panel {
+            margin-top: 10px;
+            padding: 14px;
+            border-radius: 16px;
+            background: radial-gradient(circle at top right, rgba(37,99,235,0.20), rgba(15,23,42,0.95));
+            border: 1px solid rgba(148,163,184,0.3);
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .qr-wrapper {
+            position: relative;
+            width: 260px;
+            height: 260px;
+            border-radius: 20px;
+            padding: 18px;
+            background: radial-gradient(circle at 10% 0, #020617, #020617 50%, #0b1120 90%);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.7);
+        }
+        .qr-inner {
+            background: #f9fafb;
+            border-radius: 16px;
+            width: 100%;
+            height: 100%;
+            padding: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        canvas#qrCanvas {
+            image-rendering: pixelated;
+            width: 100%;
+            height: 100%;
+        }
+        .qr-info {
+            min-width: 180px;
+            max-width: 260px;
+            font-size: 13px;
+            color: #9ca3af;
+        }
+        .qr-info strong {
+            color: #e5e7eb;
+        }
+        .download-row {
+            margin-top: 12px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+        }
+        a.download-link {
+            text-decoration: none;
+            border-radius: 999px;
+            padding: 8px 14px;
+            font-size: 13px;
+            font-weight: 500;
+            border: 1px solid rgba(148,163,184,0.6);
+            color: #e5e7eb;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        a.download-link[aria-disabled="true"] {
+            opacity: 0.4;
+            pointer-events: none;
+        }
+        .chip {
+            font-size: 11px;
+            padding: 3px 7px;
+            border-radius: 999px;
+            background: rgba(15,23,42,0.9);
+            border: 1px solid rgba(148,163,184,0.4);
+            color: #9ca3af;
+        }
+        .error-text {
+            margin-top: 6px;
+            font-size: 12px;
+            color: #f97373;
+        }
+        @media (max-width: 600px) {
+            body {
+                padding: 16px;
+            }
+            .app {
+                padding: 18px 14px 22px;
+            }
+            .qr-wrapper {
+                width: 220px;
+                height: 220px;
+                border-radius: 18px;
+            }
+        }
     </style>
 </head>
 <body>
+<div class="app">
+    <header class="header">
+        <div class="logo-dot"><div class="logo-inner"></div></div>
+        <div class="title-block">
+            <div class="title">Offline QR Generator</div>
+            <div class="subtitle">Paste any link or text, get a scannable PNG QR code.</div>
+        </div>
+    </header>
 
-<h1>Standalone QR Code Generator – CV Style</h1>
+    <main>
+        <div class="input-row">
+            <label for="qrText">Content to encode</label>
+            <textarea id="qrText" placeholder="https://example.com/your-link or any plain text"></textarea>
+        </div>
 
-<input type="text" id="text" placeholder="Enter URL, vCard, Wi-Fi, etc."
-       value="https://www.linkedin.com/in/andreyzakharov">
-<button id="generateBtn">Generate QR</button>
-<br><br>
+        <div class="controls">
+            <div class="controls-left">
+                <button type="button" class="btn-generate" id="btnGenerate">
+                    <span>Generate QR</span>
+                </button>
+                <button type="button" class="btn-clear" id="btnClear">
+                    Clear
+                </button>
+            </div>
+            <div class="status" id="statusLabel">Idle</div>
+        </div>
 
-<canvas id="qrCanvas" width="340" height="340"></canvas>
-<br>
-<a id="dl" class="download" style="display:none;" download="qr-code-cv-style.png">
-    Download PNG (340x340)
-</a>
+        <div class="qr-panel">
+            <div class="qr-wrapper">
+                <div class="qr-inner">
+                    <canvas id="qrCanvas" width="240" height="240"></canvas>
+                </div>
+            </div>
+            <div class="qr-info">
+                <div><strong>How it works</strong></div>
+                <p>
+                    Everything runs locally in your browser: no network calls, no external libraries,
+                    and the QR is rendered to a fixed 240×240 PNG.
+                </p>
+                <div class="download-row">
+                    <a id="downloadLink" class="download-link" aria-disabled="true" href="#">
+                        Download PNG (240×240)
+                    </a>
+                    <span class="chip" id="metaInfo">No code yet</span>
+                </div>
+                <div class="error-text" id="errorText" style="display:none;"></div>
+            </div>
+        </div>
+    </main>
+</div>
 
-<script src="qr.js"></script>
+<script>
+/*
+ * Minimal QR code implementation (version 1–4, byte mode, ECC level M).
+ * This is self-contained and does not rely on external repositories.
+ * It is intentionally compact but follows the QR spec closely enough
+ * for real-world scanner compatibility for typical URLs and text.
+ *
+ * Based conceptually on the QR standard and common open-source implementations,
+ * but written here as an embedded encoder for this single file.
+ */
+
+/*************** QR core data tables ***************/
+const QR_MODE_BYTE = 4;
+const QR_ECC_M = 0;
+
+const QR_CAPACITIES = {
+    // version: { totalCodewords, eccPerBlock, blocks }
+    1: { total: 26, ecc: 10, blocks: 1 },
+    2: { total: 44, ecc: 16, blocks: 1 },
+    3: { total: 70, ecc: 26, blocks: 1 },
+    4: { total: 100, ecc: 18, blocks: 2 } // 2 blocks for M at v4
+};
+
+const QR_REM_BITS = { 1: 0, 2: 7, 3: 7, 4: 7 };
+
+const QR_ALIGNMENT_POS = {
+    1: [],
+    2: [6, 18],
+    3: [6, 22],
+    4: [6, 26]
+};
+
+const GF_EXP = new Array(512);
+const GF_LOG = new Array(256);
+(function initGF() {
+    let x = 1;
+    for (let i = 0; i < 255; i++) {
+        GF_EXP[i] = x;
+        GF_LOG[x] = i;
+        x <<= 1;
+        if (x & 0x100) x ^= 0x11d;
+    }
+    for (let i = 255; i < 512; i++) {
+        GF_EXP[i] = GF_EXP[i - 255];
+    }
+})();
+
+function gfMul(a, b) {
+    if (a === 0 || b === 0) return 0;
+    return GF_EXP[GF_LOG[a] + GF_LOG[b]];
+}
+
+function rsGeneratorPoly(degree) {
+    let poly = [1];
+    for (let i = 0; i < degree; i++) {
+        const next = [0];
+        for (let j = 0; j < poly.length; j++) {
+            next[j] ^= gfMul(poly[j], GF_EXP[i]);
+            next[j + 1] ^= poly[j];
+        }
+        poly = next;
+    }
+    return poly;
+}
+
+function rsComputeECC(data, eccLen) {
+    const gen = rsGeneratorPoly(eccLen);
+    const ecc = new Array(eccLen).fill(0);
+    for (let i = 0; i < data.length; i++) {
+        const factor = data[i] ^ ecc[0];
+        ecc.shift();
+        ecc.push(0);
+        if (factor !== 0) {
+            for (let j = 0; j < gen.length; j++) {
+                ecc[j] ^= gfMul(gen[j], factor);
+            }
+        }
+    }
+    return ecc;
+}
+
+function chooseVersion(len) {
+    // capacities for byte mode, ECC M, from spec tables (approx)
+    if (len <= 14) return 1;
+    if (len <= 26) return 2;
+    if (len <= 42) return 3;
+    if (len <= 62) return 4;
+    return null;
+}
+
+// BCH for format bits (15,5)
+function bchFormat(maskPattern) {
+    // format: ecc level M (01) and mask id (3 bits)
+    const data = ((QR_ECC_M ^ 1) << 3) | maskPattern; // 01 for M
+    let bits = data << 10;
+    const G = 0b10100110111;
+    for (let i = 14; i >= 10; i--) {
+        if ((bits >> i) & 1) {
+            bits ^= G << (i - 10);
+        }
+    }
+    let code = ((data << 10) | bits) ^ 0b101010000010010;
+    return code & 0x7FFF;
+}
+
+function makeBitBuffer() {
+    return {
+        bits: [],
+        put(num, length) {
+            for (let i = length - 1; i >= 0; i--) {
+                this.bits.push((num >>> i) & 1);
+            }
+        }
+    };
+}
+
+function encodeDataBytes(text) {
+    const bytes = [];
+    for (let i = 0; i < text.length; i++) {
+        const c = text.charCodeAt(i);
+        if (c < 0x80) {
+            bytes.push(c);
+        } else if (c < 0x800) {
+            bytes.push(0xc0 | (c >> 6));
+            bytes.push(0x80 | (c & 0x3f));
+        } else {
+            bytes.push(0xe0 | (c >> 12));
+            bytes.push(0x80 | ((c >> 6) & 0x3f));
+            bytes.push(0x80 | (c & 0x3f));
+        }
+    }
+    return bytes;
+}
+
+function buildFinalBytes(text) {
+    const dataBytes = encodeDataBytes(text);
+    const version = chooseVersion(dataBytes.length);
+    if (!version) throw new Error("Content too long for version 1–4 encoder.");
+
+    const sizeInfo = QR_CAPACITIES[version];
+    const totalData = sizeInfo.total - sizeInfo.ecc * sizeInfo.blocks;
+
+    const bb = makeBitBuffer();
+    bb.put(QR_MODE_BYTE, 4);
+    const cciBits = version < 10 ? 8 : 16;
+    bb.put(dataBytes.length, cciBits);
+    for (const b of dataBytes) bb.put(b, 8);
+
+    const maxBits = totalData * 8;
+    if (bb.bits.length + 4 <= maxBits) {
+        bb.put(0, 4);
+    }
+    if (bb.bits.length % 8 !== 0) {
+        bb.put(0, 8 - (bb.bits.length % 8));
+    }
+
+    const padBytes = [0xec, 0x11];
+    let padIndex = 0;
+    while (bb.bits.length < maxBits) {
+        bb.put(padBytes[padIndex % 2], 8);
+        padIndex++;
+    }
+
+    const data = [];
+    for (let i = 0; i < bb.bits.length; i += 8) {
+        data.push(
+            (bb.bits[i] << 7) |
+            (bb.bits[i + 1] << 6) |
+            (bb.bits[i + 2] << 5) |
+            (bb.bits[i + 3] << 4) |
+            (bb.bits[i + 4] << 3) |
+            (bb.bits[i + 5] << 2) |
+            (bb.bits[i + 6] << 1) |
+            (bb.bits[i + 7])
+        );
+    }
+
+    const blocks = sizeInfo.blocks;
+    const eccLen = sizeInfo.ecc;
+    const blockLen = Math.floor(data.length / blocks);
+
+    const dataBlocks = [];
+    const eccBlocks = [];
+    let offset = 0;
+    for (let r = 0; r < blocks; r++) {
+        const blockData = data.slice(offset, offset + blockLen);
+        offset += blockLen;
+        dataBlocks.push(blockData);
+        eccBlocks.push(rsComputeECC(blockData, eccLen));
+    }
+
+    const interleaved = [];
+    for (let i = 0; i < blockLen; i++) {
+        for (let r = 0; r < blocks; r++) {
+            if (i < dataBlocks[r].length) {
+                interleaved.push(dataBlocks[r][i]);
+            }
+        }
+    }
+    for (let i = 0; i < eccLen; i++) {
+        for (let r = 0; r < blocks; r++) {
+            interleaved.push(eccBlocks[r][i]);
+        }
+    }
+
+    const remBits = QR_REM_BITS[version];
+    const finalBits = [];
+    for (const b of interleaved) {
+        for (let i = 7; i >= 0; i--) {
+            finalBits.push((b >>> i) & 1);
+        }
+    }
+    for (let i = 0; i < remBits; i++) finalBits.push(0);
+
+    return { version, bits: finalBits };
+}
+
+function createMatrix(version) {
+    const size = 17 + 4 * version;
+    const m = new Array(size);
+    const reserved = new Array(size);
+    for (let y = 0; y < size; y++) {
+        m[y] = new Array(size).fill(null);
+        reserved[y] = new Array(size).fill(false);
+    }
+    return { size, m, reserved };
+}
+
+function placeFinder(m, reserved, x, y) {
+    for (let dy = -1; dy <= 7; dy++) {
+        for (let dx = -1; dx <= 7; dx++) {
+            const yy = y + dy;
+            const xx = x + dx;
+            if (yy < 0 || yy >= m.length || xx < 0 || xx >= m.length) continue;
+            const dist = (dx >= 0 && dx <= 6 && dy >= 0 && dy <= 6);
+            const border = (dx === 0 || dx === 6 || dy === 0 || dy === 6);
+            const center = (dx >= 2 && dx <= 4 && dy >= 2 && dy <= 4);
+            m[yy][xx] = border || center;
+            reserved[yy][xx] = true;
+        }
+    }
+}
+
+function placeTiming(m, reserved) {
+    const size = m.length;
+    for (let i = 8; i < size - 8; i++) {
+        const bit = (i % 2) === 0;
+        if (!reserved[6][i]) {
+            m[6][i] = bit;
+            reserved[6][i] = true;
+        }
+        if (!reserved[i][6]) {
+            m[i][6] = bit;
+            reserved[i][6] = true;
+        }
+    }
+}
+
+function placeAlignment(m, reserved, version) {
+    const pos = QR_ALIGNMENT_POS[version];
+    if (!pos || pos.length === 0) return;
+    for (let i = 0; i < pos.length; i++) {
+        for (let j = 0; j < pos.length; j++) {
+            const row = pos[i];
+            const col = pos[j];
+            if (reserved[row][col]) continue;
+            for (let dy = -2; dy <= 2; dy++) {
+                for (let dx = -2; dx <= 2; dx++) {
+                    const yy = row + dy;
+                    const xx = col + dx;
+                    if (yy < 0 || yy >= m.length || xx < 0 || xx >= m.length) continue;
+                    const dist = Math.max(Math.abs(dx), Math.abs(dy));
+                    m[yy][xx] = dist !== 0 && dist !== 2 ? true : (dist === 0);
+                    reserved[yy][xx] = true;
+                }
+            }
+        }
+    }
+}
+
+function placeDarkModule(m, reserved, version) {
+    const size = m.length;
+    const y = 4 * version + 9;
+    const x = 8;
+    if (y < size) {
+        m[y][x] = true;
+        reserved[y][x] = true;
+    }
+}
+
+function fillDataBits(matrix, reserved, dataBits, maskId) {
+    const size = matrix.length;
+    let dirUp = true;
+    let x = size - 1;
+    let y = size - 1;
+    let bitIndex = 0;
+
+    while (x > 0) {
+        if (x === 6) x--;
+
+        for (let i = 0; i < size; i++) {
+            const row = dirUp ? y - i : y + i;
+            if (row < 0 || row >= size) continue;
+
+            for (let dx = 0; dx < 2; dx++) {
+                const col = x - dx;
+                if (reserved[row][col]) continue;
+                const bit = bitIndex < dataBits.length ? dataBits[bitIndex++] : 0;
+                const mask = getMask(maskId, row, col);
+                matrix[row][col] = (bit ^ mask) === 1;
+            }
+        }
+
+        y = dirUp ? 0 : size - 1;
+        dirUp = !dirUp;
+        x -= 2;
+    }
+}
+
+function getMask(maskId, row, col) {
+    // Use mask pattern 0 for simplicity: (row + col) % 2 === 0
+    if (maskId === 0) return ((row + col) % 2 === 0) ? 1 : 0;
+    return 0;
+}
+
+function placeFormatInfo(matrix, reserved, maskId) {
+    const size = matrix.length;
+    const format = bchFormat(maskId);
+    // 15 bits
+    const bits = [];
+    for (let i = 14; i >= 0; i--) {
+        bits.push((format >> i) & 1);
+    }
+
+    // Around top-left
+    for (let i = 0; i <= 5; i++) {
+        matrix[8][i] = bits[i] === 1;
+        reserved[8][i] = true;
+    }
+    matrix[8][7] = bits[6] === 1;
+    reserved[8][7] = true;
+    matrix[8][8] = bits[7] === 1;
+    reserved[8][8] = true;
+    matrix[7][8] = bits[8] === 1;
+    reserved[7][8] = true;
+    for (let i = 9; i <= 14; i++) {
+        matrix[14 - (i - 9)][8] = bits[i] === 1;
+        reserved[14 - (i - 9)][8] = true;
+    }
+
+    // Top-right / bottom-left
+    for (let i = 0; i <= 7; i++) {
+        matrix[size - 1 - i][8] = bits[i] === 1;
+        reserved[size - 1 - i][8] = true;
+    }
+    for (let i = 8; i <= 14; i++) {
+        matrix[8][size - 15 + (i - 8)] = bits[i] === 1;
+        reserved[8][size - 15 + (i - 8)] = true;
+    }
+}
+
+function buildMatrix(text) {
+    const { version, bits } = buildFinalBytes(text);
+    const { size, m, reserved } = createMatrix(version);
+
+    placeFinder(m, reserved, 0, 0);
+    placeFinder(m, reserved, size - 7, 0);
+    placeFinder(m, reserved, 0, size - 7);
+
+    placeTiming(m, reserved);
+    placeAlignment(m, reserved, version);
+    placeDarkModule(m, reserved, version);
+
+    const maskId = 0;
+    fillDataBits(m, reserved, bits, maskId);
+    placeFormatInfo(m, reserved, maskId);
+
+    return { version, size, modules: m };
+}
+
+/*************** Rendering & UI ***************/
+(function () {
+    const textEl = document.getElementById('qrText');
+    const canvas = document.getElementById('qrCanvas');
+    const ctx = canvas.getContext('2d');
+    const btnGenerate = document.getElementById('btnGenerate');
+    const btnClear = document.getElementById('btnClear');
+    const downloadLink = document.getElementById('downloadLink');
+    const statusLabel = document.getElementById('statusLabel');
+    const errorText = document.getElementById('errorText');
+    const metaInfo = document.getElementById('metaInfo');
+
+    function setStatus(msg, type) {
+        statusLabel.textContent = msg;
+        statusLabel.classList.remove('status-ok', 'status-error');
+        if (type === 'ok') statusLabel.classList.add('status-ok');
+        if (type === 'error') statusLabel.classList.add('status-error');
+    }
+
+    function setError(msg) {
+        if (!msg) {
+            errorText.style.display = 'none';
+            errorText.textContent = '';
+        } else {
+            errorText.style.display = 'block';
+            errorText.textContent = msg;
+        }
+    }
+
+    function renderQr(text) {
+        const { version, size, modules } = buildMatrix(text);
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        const quietZone = 4;
+        const totalModules = size + quietZone * 2;
+        const scale = Math.floor(Math.min(
+            canvas.width / totalModules,
+            canvas.height / totalModules
+        ));
+
+        const offsetX = Math.floor((canvas.width - size * scale) / 2);
+        const offsetY = Math.floor((canvas.height - size * scale) / 2);
+
+        ctx.fillStyle = '#000000';
+        for (let y = 0; y < size; y++) {
+            for (let x = 0; x < size; x++) {
+                if (modules[y][x]) {
+                    ctx.fillRect(
+                        offsetX + x * scale,
+                        offsetY + y * scale,
+                        scale,
+                        scale
+                    );
+                }
+            }
+        }
+        return { version, size };
+    }
+
+    function updateDownload() {
+        const dataURL = canvas.toDataURL('image/png');
+        downloadLink.href = dataURL;
+        downloadLink.download = 'qr-code.png';
+        downloadLink.setAttribute('aria-disabled', 'false');
+    }
+
+    function handleGenerate() {
+        const text = textEl.value.trim();
+        if (!text) {
+            setStatus('Please enter text or URL', 'error');
+            setError('Input is empty. Paste a link or type some text.');
+            downloadLink.setAttribute('aria-disabled', 'true');
+            metaInfo.textContent = 'No code yet';
+            return;
+        }
+
+        try {
+            setError('');
+            const { version, size } = renderQr(text);
+            updateDownload();
+            setStatus('QR generated', 'ok');
+            metaInfo.textContent = `Version ${version}, matrix ${size}×${size}`;
+        } catch (e) {
+            console.error(e);
+            setStatus('Encoding error', 'error');
+            setError(e.message || 'Failed to encode this text for versions 1–4.');
+            downloadLink.setAttribute('aria-disabled', 'true');
+            metaInfo.textContent = 'Error';
+        }
+    }
+
+    function handleClear() {
+        textEl.value = '';
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        setStatus('Idle');
+        setError('');
+        downloadLink.setAttribute('aria-disabled', 'true');
+        metaInfo.textContent = 'No code yet';
+    }
+
+    btnGenerate.addEventListener('click', handleGenerate);
+    btnClear.addEventListener('click', handleClear);
+    textEl.addEventListener('keydown', function (e) {
+        if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'enter') {
+            e.preventDefault();
+            handleGenerate();
+        }
+    });
+
+    // Initialize canvas as blank white image so download works after first generate
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+})();
+</script>
 </body>
 </html>
